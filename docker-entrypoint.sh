@@ -5,7 +5,7 @@ set -e
 CONNECTION_STRING=""
 TOOLS_CONFIG=""
 HTTP_MODE=""
-PORT="${PORT:-3000}"
+PORT="${PORT:-7409}"
 
 # Check for HTTP transport mode (required for Smithery hosted deployment)
 if [ "$MCP_TRANSPORT" = "http" ] || [ -n "$HTTP_MODE_ENABLED" ]; then

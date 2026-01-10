@@ -28,7 +28,7 @@ RUN chown -R sierra-mcp:nodejs /app
 USER sierra-mcp
 
 # Expose HTTP port for MCP server
-EXPOSE 3000
+EXPOSE 7409
 
 # Use entrypoint script for flexible configuration
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
