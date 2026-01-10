@@ -1,13 +1,17 @@
 #!/usr/bin/env node
 import { program } from 'commander';
 import fs from 'node:fs';
+import { randomUUID } from 'node:crypto';
+import express, { Request, Response } from 'express';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import {
   CallToolRequestSchema,
   ErrorCode,
   ListToolsRequestSchema,
-  McpError
+  McpError,
+  isInitializeRequest
 } from '@modelcontextprotocol/sdk/types.js';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 
@@ -27,6 +31,8 @@ program
   .version('1.0.0')
   .option('-cs, --connection-string <string>', 'PostgreSQL connection string')
   .option('-tc, --tools-config <path>', 'Path to tools configuration JSON file')
+  .option('--http', 'Use HTTP transport instead of stdio (for Smithery deployment)')
+  .option('--port <number>', 'Port for HTTP server (default: 3000)', '3000')
   .parse(process.argv);
 
 const options = program.opts();
@@ -178,7 +184,11 @@ class SierraDBServer {
     }) as any);
   }
 
-  async run() {
+  getServer(): Server {
+    return this.server;
+  }
+
+  async runStdio() {
     if (this.availableToolsList.length === 0 && !options.toolsConfig) {
         console.warn("[Sierra MCP Warning] No tools loaded and no tools config provided. Server will start with no active tools.");
     }
@@ -187,6 +197,142 @@ class SierraDBServer {
     const transport = new StdioServerTransport();
     await this.server.connect(transport);
     console.error('Sierra DB Query MCP server running on stdio');
+  }
+
+  async runHttp(port: number) {
+    if (this.availableToolsList.length === 0 && !options.toolsConfig) {
+        console.warn("[Sierra MCP Warning] No tools loaded and no tools config provided. Server will start with no active tools.");
+    }
+
+    this.loadAndFilterTools();
+
+    const app = express();
+    app.use(express.json());
+
+    // Map to store transports by session ID
+    const transports: Record<string, StreamableHTTPServerTransport> = {};
+
+    // MCP POST endpoint
+    app.post('/mcp', async (req: Request, res: Response) => {
+      const sessionId = req.headers['mcp-session-id'] as string | undefined;
+
+      try {
+        let transport: StreamableHTTPServerTransport;
+
+        if (sessionId && transports[sessionId]) {
+          // Reuse existing transport
+          transport = transports[sessionId];
+        } else if (!sessionId && isInitializeRequest(req.body)) {
+          // New initialization request
+          transport = new StreamableHTTPServerTransport({
+            sessionIdGenerator: () => randomUUID(),
+            onsessioninitialized: (newSessionId: string) => {
+              console.error(`Session initialized with ID: ${newSessionId}`);
+              transports[newSessionId] = transport;
+            }
+          });
+
+          // Set up onclose handler to clean up transport when closed
+          transport.onclose = () => {
+            const sid = transport.sessionId;
+            if (sid && transports[sid]) {
+              console.error(`Transport closed for session ${sid}, removing from transports map`);
+              delete transports[sid];
+            }
+          };
+
+          // Connect the transport to the MCP server
+          await this.server.connect(transport);
+          await transport.handleRequest(req, res, req.body);
+          return;
+        } else {
+          // Invalid request - no session ID or not initialization request
+          res.status(400).json({
+            jsonrpc: '2.0',
+            error: {
+              code: -32000,
+              message: 'Bad Request: No valid session ID provided'
+            },
+            id: null
+          });
+          return;
+        }
+
+        // Handle the request with existing transport
+        await transport.handleRequest(req, res, req.body);
+      } catch (error) {
+        console.error('Error handling MCP request:', error);
+        if (!res.headersSent) {
+          res.status(500).json({
+            jsonrpc: '2.0',
+            error: {
+              code: -32603,
+              message: 'Internal server error'
+            },
+            id: null
+          });
+        }
+      }
+    });
+
+    // Handle GET requests for SSE streams
+    app.get('/mcp', async (req: Request, res: Response) => {
+      const sessionId = req.headers['mcp-session-id'] as string | undefined;
+
+      if (!sessionId || !transports[sessionId]) {
+        res.status(400).send('Invalid or missing session ID');
+        return;
+      }
+
+      const transport = transports[sessionId];
+      await transport.handleRequest(req, res);
+    });
+
+    // Handle DELETE requests for session termination
+    app.delete('/mcp', async (req: Request, res: Response) => {
+      const sessionId = req.headers['mcp-session-id'] as string | undefined;
+
+      if (!sessionId || !transports[sessionId]) {
+        res.status(400).send('Invalid or missing session ID');
+        return;
+      }
+
+      try {
+        const transport = transports[sessionId];
+        await transport.handleRequest(req, res);
+      } catch (error) {
+        console.error('Error handling session termination:', error);
+        if (!res.headersSent) {
+          res.status(500).send('Error processing session termination');
+        }
+      }
+    });
+
+    // Health check endpoint
+    app.get('/health', (_req: Request, res: Response) => {
+      res.json({ status: 'ok', server: 'sierra-db-query', version: '1.0.0' });
+    });
+
+    app.listen(port, () => {
+      console.error(`Sierra DB Query MCP server running on HTTP port ${port}`);
+    });
+
+    // Handle server shutdown
+    process.on('SIGINT', async () => {
+      console.error('Shutting down server...');
+      for (const sessionId in transports) {
+        try {
+          console.error(`Closing transport for session ${sessionId}`);
+          await transports[sessionId].close();
+          delete transports[sessionId];
+        } catch (error) {
+          console.error(`Error closing transport for session ${sessionId}:`, error);
+        }
+      }
+      await this.cleanup();
+      console.error('Server shutdown complete');
+      process.exit(0);
+    });
   }
 }
 
@@ -212,7 +358,18 @@ const allTools: SierraTool[] = [
 
 const serverInstance = new SierraDBServer(allTools);
 
-serverInstance.run().catch(error => {
-  console.error('Failed to run the server:', error);
-  process.exit(1);
-});
+// Determine which transport to use
+const useHttp = options.http || process.env.MCP_TRANSPORT === 'http';
+const port = parseInt(options.port || process.env.PORT || '3000', 10);
+
+if (useHttp) {
+  serverInstance.runHttp(port).catch(error => {
+    console.error('Failed to run the HTTP server:', error);
+    process.exit(1);
+  });
+} else {
+  serverInstance.runStdio().catch(error => {
+    console.error('Failed to run the server:', error);
+    process.exit(1);
+  });
+}
