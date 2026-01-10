@@ -3,6 +3,7 @@ import { program } from 'commander';
 import fs from 'node:fs';
 import { randomUUID } from 'node:crypto';
 import express, { Request, Response } from 'express';
+import cors from 'cors';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
@@ -207,6 +208,16 @@ class SierraDBServer {
     this.loadAndFilterTools();
 
     const app = express();
+
+    // Enable CORS for browser-based clients
+    app.use(cors({
+      origin: true,
+      credentials: true,
+      methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Accept', 'mcp-session-id'],
+      exposedHeaders: ['mcp-session-id']
+    }));
+
     app.use(express.json());
 
     // Map to store transports by session ID
