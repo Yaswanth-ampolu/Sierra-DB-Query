@@ -32,7 +32,7 @@ program
   .option('-cs, --connection-string <string>', 'PostgreSQL connection string')
   .option('-tc, --tools-config <path>', 'Path to tools configuration JSON file')
   .option('--http', 'Use HTTP transport instead of stdio (for Smithery deployment)')
-  .option('--port <number>', 'Port for HTTP server (default: 3000)', '3000')
+  .option('--port <number>', 'Port for HTTP server (default: 7409)', '7409')
   .parse(process.argv);
 
 const options = program.opts();
@@ -374,7 +374,7 @@ const serverInstance = new SierraDBServer(allTools);
 
 // Determine which transport to use
 const useHttp = options.http || process.env.MCP_TRANSPORT === 'http';
-const port = parseInt(options.port || process.env.PORT || '3000', 10);
+const port = parseInt(options.port || process.env.PORT || '7409', 10);
 
 if (useHttp) {
   serverInstance.runHttp(port).catch(error => {

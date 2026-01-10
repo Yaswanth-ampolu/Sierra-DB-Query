@@ -2,7 +2,7 @@
 
 startCommand:
   type: http
-  port: 3000
+  port: 7409
   configSchema:
     type: object
     properties:
@@ -14,10 +14,10 @@ startCommand:
     |-
     (config) => ({
       command: 'node',
-      args: ['build/index.js', '--http', '--port', '3000', ...(config.connectionString ? ['--connection-string', config.connectionString] : [])],
+      args: ['build/index.js', '--http', '--port', '7409', ...(config.connectionString ? ['--connection-string', config.connectionString] : [])],
       env: {
         MCP_TRANSPORT: 'http',
-        PORT: '3000',
+        PORT: '7409',
         ...(config.connectionString ? {} : { POSTGRES_CONNECTION_STRING: process.env.POSTGRES_CONNECTION_STRING || '' })
       }
     })
