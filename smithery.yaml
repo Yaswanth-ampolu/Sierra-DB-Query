@@ -1,0 +1,20 @@
+# Smithery configuration file: https://smithery.ai/docs/config#smitheryyaml
+
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    properties:
+      connectionString:
+        type: string
+        description: PostgreSQL connection string (e.g., postgresql://user:password@host:5432/database)
+    required: []
+  commandFunction:
+    |-
+    (config) => ({
+      command: 'node',
+      args: ['build/index.js', ...(config.connectionString ? ['--connection-string', config.connectionString] : [])],
+      env: config.connectionString ? {} : { POSTGRES_CONNECTION_STRING: process.env.POSTGRES_CONNECTION_STRING || '' }
+    })
+  exampleConfig:
+    connectionString: "postgresql://user:password@localhost:5432/database"

@@ -39,6 +39,14 @@
     "email": "yaswanth@sierra.ai"
   },
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Yaswanth-ampolu/sierra-db-query.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Yaswanth-ampolu/sierra-db-query/issues"
+  },
+  "homepage": "https://github.com/Yaswanth-ampolu/sierra-db-query#readme",
   "dependencies": {
     "@modelcontextprotocol/sdk": "latest",
     "commander": "^12.1.0",
