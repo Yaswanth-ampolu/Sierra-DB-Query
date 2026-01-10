@@ -27,6 +27,9 @@ RUN adduser -S sierra-mcp -u 1001
 RUN chown -R sierra-mcp:nodejs /app
 USER sierra-mcp
 
+# Expose HTTP port for MCP server
+EXPOSE 3000
+
 # Use entrypoint script for flexible configuration
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 CMD []

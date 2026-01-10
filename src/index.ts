@@ -308,12 +308,26 @@ class SierraDBServer {
       }
     });
 
+    // Root endpoint
+    app.get('/', (_req: Request, res: Response) => {
+      res.json({
+        name: 'sierra-db-query',
+        version: '1.0.0',
+        status: 'ok',
+        endpoints: {
+          mcp: '/mcp',
+          health: '/health'
+        }
+      });
+    });
+
     // Health check endpoint
     app.get('/health', (_req: Request, res: Response) => {
       res.json({ status: 'ok', server: 'sierra-db-query', version: '1.0.0' });
     });
 
-    app.listen(port, () => {
+    // Bind to 0.0.0.0 for Docker/container deployment
+    app.listen(port, '0.0.0.0', () => {
       console.error(`Sierra DB Query MCP server running on HTTP port ${port}`);
     });
 

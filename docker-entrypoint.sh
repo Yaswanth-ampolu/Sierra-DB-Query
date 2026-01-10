@@ -4,6 +4,13 @@ set -e
 # Default values
 CONNECTION_STRING=""
 TOOLS_CONFIG=""
+HTTP_MODE=""
+PORT="${PORT:-3000}"
+
+# Check for HTTP transport mode (required for Smithery hosted deployment)
+if [ "$MCP_TRANSPORT" = "http" ] || [ -n "$HTTP_MODE_ENABLED" ]; then
+    HTTP_MODE="--http --port $PORT"
+fi
 
 # Parse environment variables
 if [ -n "$POSTGRES_CONNECTION_STRING" ]; then
@@ -16,6 +23,10 @@ fi
 
 # Build the command
 CMD="node build/index.js"
+
+if [ -n "$HTTP_MODE" ]; then
+    CMD="$CMD $HTTP_MODE"
+fi
 
 if [ -n "$CONNECTION_STRING" ]; then
     CMD="$CMD $CONNECTION_STRING"
