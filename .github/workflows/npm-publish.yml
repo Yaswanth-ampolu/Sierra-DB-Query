@@ -1,19 +1,17 @@
-# Publish to npm when a GitHub Release is created
-# This workflow triggers on release creation and publishes to npm
-
-name: Publish to npm
+# Publish to npm and GitHub Packages when a GitHub Release is created
+name: Publish Package
 
 on:
   release:
     types: [published]
 
 jobs:
-  build:
+  publish-npm:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node.js for npm
         uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -29,3 +27,34 @@ jobs:
         run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  publish-github-packages:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js for GitHub Packages
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@Yaswanth-ampolu'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Update package name for GitHub Packages
+        run: |
+          # GitHub Packages requires scoped package name
+          sed -i 's/"name": "sierra-db-query"/"name": "@yaswanth-ampolu\/sierra-db-query"/' package.json
+
+      - name: Publish to GitHub Packages
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
