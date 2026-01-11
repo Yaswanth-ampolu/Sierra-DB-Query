@@ -1,6 +1,6 @@
 {
   "name": "sierra-db-query",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Sierra DB Query - A Model Context Protocol (MCP) server for PostgreSQL database management",
   "main": "build/index.js",
   "types": "build/index.d.ts",
