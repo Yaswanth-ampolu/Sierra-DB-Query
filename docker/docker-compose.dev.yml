@@ -1,0 +1,70 @@
+# Sierra DB Query - Development Docker Compose
+# Includes local PostgreSQL for testing
+
+version: '3.8'
+
+services:
+  # MCP Server with local database connection
+  sierra-mcp:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: sierra-mcp-dev
+    ports:
+      - "7409:7409"
+    environment:
+      - MCP_TRANSPORT=http
+      - PORT=7409
+      # Use local postgres or set your own connection string
+      - POSTGRES_CONNECTION_STRING=postgresql://sierra:sierrapass@postgres:5432/sierradb
+      # Or for external database:
+      # - POSTGRES_CONNECTION_STRING=postgresql://user:pass@your-host:5432/yourdb
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - sierra-dev-network
+
+  # Local PostgreSQL for development
+  postgres:
+    image: postgres:16-alpine
+    container_name: sierra-postgres-dev
+    environment:
+      POSTGRES_USER: sierra
+      POSTGRES_PASSWORD: sierrapass
+      POSTGRES_DB: sierradb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d:ro
+    networks:
+      - sierra-dev-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sierra -d sierradb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # pgAdmin for database management (optional)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: sierra-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@sierra.local
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    networks:
+      - sierra-dev-network
+
+networks:
+  sierra-dev-network:
+    driver: bridge
+
+volumes:
+  postgres_dev_data:

@@ -1,0 +1,77 @@
+# Sierra DB Query MCP Server - Docker Compose Configuration
+# https://github.com/Yaswanth-ampolu/sierra-db-query
+
+version: '3.8'
+
+services:
+  # ============================================
+  # MCP Server - HTTP Transport Mode
+  # ============================================
+  # Access via: http://localhost:7409/mcp
+  # Health check: http://localhost:7409/health
+  # ============================================
+  sierra-mcp:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: sierra-mcp-server
+    ports:
+      - "7409:7409"
+    environment:
+      # Required: Enable HTTP transport
+      - MCP_TRANSPORT=http
+      - PORT=7409
+
+      # Optional: Default PostgreSQL connection string
+      # If not set, must be provided per-request in tool arguments
+      # - POSTGRES_CONNECTION_STRING=postgresql://user:pass@host:5432/database
+
+      # Optional: Limit available tools
+      # - SIERRA_TOOLS_CONFIG=/app/config/tools.json
+
+    # Mount custom tools config (optional)
+    # volumes:
+    #   - ./tools-config.json:/app/config/tools.json:ro
+
+    restart: unless-stopped
+
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:7409/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+    networks:
+      - sierra-network
+
+  # ============================================
+  # PostgreSQL Database (Optional - for local dev)
+  # ============================================
+  # Uncomment to run a local PostgreSQL instance
+  # ============================================
+  # postgres:
+  #   image: postgres:16-alpine
+  #   container_name: sierra-postgres
+  #   environment:
+  #     POSTGRES_USER: sierra
+  #     POSTGRES_PASSWORD: sierrapass
+  #     POSTGRES_DB: sierradb
+  #   ports:
+  #     - "5432:5432"
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   networks:
+  #     - sierra-network
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U sierra -d sierradb"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+
+networks:
+  sierra-network:
+    driver: bridge
+
+# volumes:
+#   postgres_data:
