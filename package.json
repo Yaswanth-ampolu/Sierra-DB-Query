@@ -1,5 +1,5 @@
 {
-  "name": "@sierra/db-query",
+  "name": "sierra-db-query",
   "version": "1.0.0",
   "description": "Sierra DB Query - A Model Context Protocol (MCP) server for PostgreSQL database management",
   "main": "build/index.js",
@@ -39,7 +39,7 @@
   ],
   "author": {
     "name": "Yaswanth Ampolu",
-    "email": "yaswanth@sierra.ai"
+    "email": "yaswanth@sierraedge.ai"
   },
   "license": "MIT",
   "repository": {
