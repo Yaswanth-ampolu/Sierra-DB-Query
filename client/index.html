@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sierra DB Query - MCP Client</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-content">
+        <div class="logo">
+          <div class="logo-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <ellipse cx="12" cy="6" rx="8" ry="3"/>
+              <path d="M4 6v6c0 1.657 3.582 3 8 3s8-1.343 8-3V6"/>
+              <path d="M4 12v6c0 1.657 3.582 3 8 3s8-1.343 8-3v-6"/>
+            </svg>
+          </div>
+          <h1>Sierra DB Query</h1>
+          <span class="version-badge">MCP Client</span>
+        </div>
+        <div class="connection-status" id="connectionStatus">
+          <span class="status-dot"></span>
+          <span class="status-text">Disconnected</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main">
+      <!-- Left Sidebar - Connection & Quick Actions -->
+      <aside class="sidebar">
+        <!-- Connection Panel -->
+        <section class="panel connection-panel">
+          <div class="panel-header">
+            <h2>Connection</h2>
+          </div>
+          <div class="panel-content">
+            <div class="form-group">
+              <label for="serverUrl">MCP Server URL</label>
+              <input type="text" id="serverUrl" placeholder="http://localhost:7409" value="http://localhost:7409">
+            </div>
+            <div class="form-group">
+              <label for="connectionString">PostgreSQL Connection String</label>
+              <input type="password" id="connectionString" placeholder="postgresql://user:pass@host:5432/db">
+              <button class="btn-icon-only toggle-password" id="togglePassword" title="Show/Hide">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+              </button>
+            </div>
+            <div class="button-group">
+              <button class="btn btn-primary" id="connectBtn">Connect</button>
+              <button class="btn btn-secondary" id="disconnectBtn" disabled>Disconnect</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Quick Actions -->
+        <section class="panel quick-actions-panel">
+          <div class="panel-header">
+            <h2>Quick Actions</h2>
+          </div>
+          <div class="panel-content">
+            <div class="quick-actions" id="quickActions">
+              <button class="quick-action-btn" data-action="list-tables" disabled>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2"/>
+                  <path d="M3 9h18M9 21V9"/>
+                </svg>
+                <span>List Tables</span>
+              </button>
+              <button class="quick-action-btn" data-action="list-enums" disabled>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>
+                </svg>
+                <span>List Enums</span>
+              </button>
+              <button class="quick-action-btn" data-action="run-query" disabled>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polygon points="5 3 19 12 5 21 5 3"/>
+                </svg>
+                <span>Run Query</span>
+              </button>
+              <button class="quick-action-btn" data-action="db-stats" disabled>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M18 20V10M12 20V4M6 20v-6"/>
+                </svg>
+                <span>DB Stats</span>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Available Tools -->
+        <section class="panel tools-list-panel">
+          <div class="panel-header">
+            <h2>Available Tools</h2>
+            <span class="tool-count" id="toolCount">0</span>
+          </div>
+          <div class="panel-content">
+            <div class="tools-list" id="toolsList">
+              <div class="empty-state small">
+                <p>Connect to see tools</p>
+              </div>
+            </div>
+          </div>
+        </section>
+      </aside>
+
+      <!-- Center - Tool Executor -->
+      <section class="main-content">
+        <!-- Tool Executor Panel -->
+        <div class="panel executor-panel">
+          <div class="panel-header">
+            <h2 id="executorTitle">Tool Executor</h2>
+            <div class="executor-actions">
+              <button class="btn btn-small" id="clearFormBtn">Clear</button>
+            </div>
+          </div>
+          <div class="panel-content">
+            <div class="executor-form" id="executorForm">
+              <div class="empty-state">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/>
+                </svg>
+                <p>Select a tool or quick action to get started</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Results Panel -->
+        <div class="panel results-panel">
+          <div class="panel-header">
+            <h2>Results</h2>
+            <div class="results-actions">
+              <button class="btn btn-small" id="copyResultsBtn" disabled>Copy</button>
+              <button class="btn btn-small" id="clearResultsBtn">Clear</button>
+            </div>
+          </div>
+          <div class="panel-content">
+            <div class="results-container" id="resultsContainer">
+              <div class="empty-state">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <rect x="3" y="3" width="18" height="18" rx="2"/>
+                  <path d="M3 9h18M9 21V9"/>
+                </svg>
+                <p>Execute a tool to see results</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right Sidebar - Logs -->
+      <aside class="logs-sidebar">
+        <div class="panel logs-panel">
+          <div class="panel-header">
+            <h2>Request Log</h2>
+            <button class="btn btn-small" id="clearLogsBtn">Clear</button>
+          </div>
+          <div class="logs-container" id="logsContainer"></div>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <!-- Query Modal -->
+  <div class="modal" id="queryModal">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Run SQL Query</h3>
+        <button class="modal-close" id="closeQueryModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="sqlQuery">SQL Query</label>
+          <textarea id="sqlQuery" rows="6" placeholder="SELECT * FROM users LIMIT 10;"></textarea>
+        </div>
+        <div class="form-group">
+          <label>
+            <input type="checkbox" id="expectRows" checked>
+            Expect rows (uncheck for CREATE, DROP, etc.)
+          </label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="cancelQueryBtn">Cancel</button>
+        <button class="btn btn-primary" id="runQueryBtn">Execute</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="mcp-client.js"></script>
+</body>
+</html>

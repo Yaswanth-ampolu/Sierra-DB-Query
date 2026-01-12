@@ -1,6 +1,6 @@
 {
-  "name": "@sierra/db-query",
-  "version": "1.0.0",
+  "name": "sierra-db-query",
+  "version": "1.0.1",
   "description": "Sierra DB Query - A Model Context Protocol (MCP) server for PostgreSQL database management",
   "main": "build/index.js",
   "types": "build/index.d.ts",
@@ -19,7 +19,10 @@
   "scripts": {
     "build": "tsc && chmod +x build/index.js",
     "start": "node build/index.js",
+    "start:http": "node build/index.js --http --port 7409",
+    "client": "node client/server.js",
     "dev": "tsc -w",
+    "dev:all": "npm run build && (npm run start:http & npm run client)",
     "clean": "rm -rf build",
     "prepublishOnly": "npm run build"
   },
@@ -36,7 +39,7 @@
   ],
   "author": {
     "name": "Yaswanth Ampolu",
-    "email": "yaswanth@sierra.ai"
+    "email": "ampoluyaswanth2002@gmail.com"
   },
   "license": "MIT",
   "repository": {
@@ -56,6 +59,7 @@
     "zod-to-json-schema": "^3.24.5"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.19",
     "@types/express": "^4.17.21",
     "@types/node": "^20.11.17",
     "@types/pg": "^8.10.2",

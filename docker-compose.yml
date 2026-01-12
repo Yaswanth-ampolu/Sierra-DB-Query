@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  # MCP Server (HTTP transport)
+  mcp-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "7409:7409"
+    environment:
+      - MCP_TRANSPORT=http
+      - PORT=7409
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:7409/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Browser Client
+  client:
+    image: node:lts-alpine
+    working_dir: /app/client
+    volumes:
+      - ./client:/app/client:ro
+    ports:
+      - "7070:7070"
+    command: node server.js 7070
+    depends_on:
+      - mcp-server
+    restart: unless-stopped

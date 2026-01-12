@@ -250,4 +250,4 @@ MIT License - see [LICENSE](./LICENSE) file for details.
 
 ## Author
 
-**Yaswanth Ampolu** - [yaswanth@sierra.ai](mailto:yaswanth@sierra.ai)
+**Yaswanth Ampolu** - [ampoluyaswanth2002@gmail.com](mailto:ampoluyaswanth2002@gmail.com)
